@@ -50,15 +50,75 @@
             cursor: pointer;
             touch-action: manipulation;
         }
+        #subscribeButton {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+        }
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        #pixelLoadingBar {
+            width: 200px;
+            height: 15px;
+            background-color: #222;
+            border: 2px solid #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        #pixelLoadingProgress {
+            width: 0;
+            height: 100%;
+            background-color: #4CAF50;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.5s ease;
+        }
+        #pixelLoadingText {
+            color: #4CAF50;
+            font-family: monospace;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
+    <div id="loadingScreen">
+        <div id="pixelLoadingText">Загрузка...</div>
+        <div id="pixelLoadingBar">
+            <div id="pixelLoadingProgress"></div>
+        </div>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
+    
     <div id="gameOverScreen">
         <h1>Игра окончена!</h1>
         <p id="finalScore">Ваш счет: 0</p>
         <button id="restartButton">Начать заново</button>
     </div>
+    <button id="subscribeButton" onclick="window.open('https://t.me/fuitec', '_blank')">
+        Подписаться
+    </button>
 
     <script>
         class SpaceDefender {
@@ -68,10 +128,29 @@
                 this.gameOverScreen = document.getElementById('gameOverScreen');
                 this.finalScoreElement = document.getElementById('finalScore');
                 this.restartButton = document.getElementById('restartButton');
+                this.subscribeButton = document.getElementById('subscribeButton');
+                this.loadingScreen = document.getElementById('loadingScreen');
+                this.pixelLoadingProgress = document.getElementById('pixelLoadingProgress');
                 
-                this.setupCanvas();
-                this.initGame();
-                this.setupEventListeners();
+                this.loadGame();
+            }
+
+            loadGame() {
+                let progress = 0;
+                const loadingInterval = setInterval(() => {
+                    progress += 10;
+                    this.pixelLoadingProgress.style.width = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(loadingInterval);
+                        setTimeout(() => {
+                            this.loadingScreen.style.display = 'none';
+                            this.setupCanvas();
+                            this.initGame();
+                            this.setupEventListeners();
+                        }, 500);
+                    }
+                }, 100);
             }
 
             setupCanvas() {
@@ -80,17 +159,15 @@
                 window.addEventListener('resize', () => {
                     this.canvas.width = window.innerWidth;
                     this.canvas.height = window.innerHeight;
-                                });
+                });
             }
 
             setupEventListeners() {
                 this.restartButton.addEventListener('click', () => this.restartGame());
 
-                // Добавляем управление для мобильных устройств
                 this.canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault(); // Отключаем скролл
+                    e.preventDefault();
                     const touch = e.touches[0];
-                    // Ограничиваем движение в пределах экрана
                     this.player.x = Math.max(0, Math.min(
                         touch.clientX - this.player.width / 2, 
                         this.canvas.width - this.player.width
@@ -104,7 +181,6 @@
             }
 
             initGame() {
-                // Уменьшаем размер для мобильных
                 const scaleFactor = this.canvas.width / 500;
                 
                 this.player = {
@@ -113,11 +189,12 @@
                     width: 50 * scaleFactor,
                     height: 50 * scaleFactor,
                     speed: 5 * scaleFactor,
-                    autoShoot: true // Включаем автострельбу по умолчанию
+                    autoShoot: true
                 };
 
                 this.enemies = [];
                 this.bullets = [];
+                this.explosions = [];
                 this.score = 0;
                 this.gameOver = false;
                 this.lastShootTime = 0;
@@ -126,9 +203,26 @@
                 this.startGameLoop();
             }
 
+            createExplosion(x, y) {
+                const scaleFactor = this.canvas.width / 500;
+                this.explosions.push({
+                    x: x,
+                    y: y,
+                    radius: 0,
+                    maxRadius: 30 * scaleFactor,
+                    opacity: 1
+                });
+            }
+
+            showSubscribeButton() {
+                this.subscribeButton.style.display = 'block';
+                setTimeout(() => {
+                    this.subscribeButton.style.display = 'none';
+                }, 10000);
+            }
+
             shootBullet() {
                 const currentTime = Date.now();
-                // Уменьшаем интервал между выстрелами
                 if (currentTime - this.lastShootTime > 100) {
                     this.bullets.push({
                         x: this.player.x + this.player.width / 2,
@@ -137,13 +231,12 @@
                         height: 15 * (this.canvas.width / 500),
                         speed: 10 * (this.canvas.width / 500)
                     });
-                    this.lastShootTime = currentTime;
+                                        this.lastShootTime = currentTime;
                 }
             }
 
             spawnEnemies() {
                 const currentTime = Date.now();
-                // Увеличиваем частоту появления врагов
                 if (currentTime - this.lastEnemySpawnTime > 500) {
                     const scaleFactor = this.canvas.width / 500;
                     this.enemies.push({
@@ -158,14 +251,11 @@
             }
 
             updateGameObjects() {
-                // Автоматическая стрельба
                 this.shootBullet();
 
-                // Обновление врагов
                 this.enemies.forEach((enemy, index) => {
                     enemy.y += enemy.speed;
                     
-                    // Проверка столкновения с игроком
                     if (this.checkCollision(this.player, enemy)) {
                         this.gameOver = true;
                     }
@@ -175,20 +265,33 @@
                     }
                 });
 
-                // Обновление пуль
                 this.bullets.forEach((bullet, bIndex) => {
                     bullet.y -= bullet.speed;
                     
-                    // Проверка столкновения пуль с врагами
                     this.enemies.forEach((enemy, eIndex) => {
                         if (this.checkCollision(bullet, enemy)) {
+                            this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                            
                             this.bullets.splice(bIndex, 1);
                             this.enemies.splice(eIndex, 1);
                             this.score++;
+
+                            if (this.score % 150 === 0) {
+                                this.showSubscribeButton();
+                            }
                         }
                     });
 
                     if (bullet.y < 0) this.bullets.splice(bIndex, 1);
+                });
+
+                this.explosions.forEach((explosion, index) => {
+                    explosion.radius += 2;
+                    explosion.opacity -= 0.05;
+                    
+                    if (explosion.opacity <= 0) {
+                        this.explosions.splice(index, 1);
+                    }
                 });
             }
 
@@ -200,7 +303,6 @@
             }
 
             drawGameObjects() {
-                // Очистка с учетом размера экрана
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
                 // Рисование игрока
@@ -223,15 +325,38 @@
                     );
                 });
 
-                // Рисование пуль
-                this.ctx.fillStyle = 'yellow';
+                // Рисование пуль с эффектом следа
                 this.bullets.forEach(bullet => {
+                    // Основная пуля
+                    this.ctx.fillStyle = 'yellow';
                     this.ctx.fillRect(
                         bullet.x, 
                         bullet.y, 
                         bullet.width, 
                         bullet.height
                     );
+
+                    // Эффект следа
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(bullet.x + bullet.width / 2, bullet.y + bullet.height);
+                    this.ctx.lineTo(bullet.x + bullet.width / 2, bullet.y + bullet.height * 3);
+                    this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+                    this.ctx.lineWidth = bullet.width * 1.5;
+                    this.ctx.stroke();
+                });
+
+                // Рисование взрывов
+                this.explosions.forEach(explosion => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(
+                        explosion.x, 
+                        explosion.y, 
+                        explosion.radius, 
+                        0, 
+                        Math.PI * 2
+                    );
+                    this.ctx.fillStyle = `rgba(255, 165, 0, ${explosion.opacity})`;
+                    this.ctx.fill();
                 });
 
                 // Отображение счета с адаптивным размером шрифта
