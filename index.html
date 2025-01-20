@@ -205,13 +205,19 @@
 
             createExplosion(x, y) {
                 const scaleFactor = this.canvas.width / 500;
-                this.explosions.push({
-                    x: x,
-                    y: y,
-                    radius: 0,
-                    maxRadius: 30 * scaleFactor,
-                    opacity: 1
-                });
+                const particles = [];
+                for (let i = 0; i < 50; i++) {
+                    particles.push({
+                        x: x,
+                        y: y,
+                        radius: Math.random() * 3 + 1,
+                        color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`,
+                        velocityX: (Math.random() - 0.5) * 10,
+                        velocityY: (Math.random() - 0.5) * 10,
+                        life: 1
+                    });
+                }
+                this.explosions.push({ particles });
             }
 
             showSubscribeButton() {
@@ -231,7 +237,7 @@
                         height: 15 * (this.canvas.width / 500),
                         speed: 10 * (this.canvas.width / 500)
                     });
-                                        this.lastShootTime = currentTime;
+                    this.lastShootTime = currentTime;
                 }
             }
 
@@ -286,10 +292,15 @@
                 });
 
                 this.explosions.forEach((explosion, index) => {
-                    explosion.radius += 2;
-                    explosion.opacity -= 0.05;
-                    
-                    if (explosion.opacity <= 0) {
+                    explosion.particles.forEach(particle => {
+                        particle.x += particle.velocityX;
+                        particle.y += particle.velocityY;
+                        particle.life -= 0.02;
+                    });
+
+                    explosion.particles = explosion.particles.filter(particle => particle.life > 0);
+
+                    if (explosion.particles.length === 0) {
                         this.explosions.splice(index, 1);
                     }
                 });
@@ -347,16 +358,14 @@
 
                 // Рисование взрывов
                 this.explosions.forEach(explosion => {
-                    this.ctx.beginPath();
-                    this.ctx.arc(
-                        explosion.x, 
-                        explosion.y, 
-                        explosion.radius, 
-                        0, 
-                        Math.PI * 2
-                    );
-                    this.ctx.fillStyle = `rgba(255, 165, 0, ${explosion.opacity})`;
-                    this.ctx.fill();
+                    explosion.particles.forEach(particle => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                        this.ctx.fillStyle = particle.color;
+                        this.ctx.globalAlpha = particle.life;
+                        this.ctx.fill();
+                    });
+                    this.ctx.globalAlpha = 1;
                 });
 
                 // Отображение счета с адаптивным размером шрифта
