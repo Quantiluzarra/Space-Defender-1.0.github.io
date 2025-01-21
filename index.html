@@ -132,6 +132,24 @@
                 this.loadingScreen = document.getElementById('loadingScreen');
                 this.pixelLoadingProgress = document.getElementById('pixelLoadingProgress');
                 
+                // Звуковые эффекты
+                this.shootSound = new Audio('https://www.soundjay.com/button/beep-07.mp3');
+                this.explosionSound = new Audio('https://www.soundjay.com/explosion-sound-effect.mp3');
+
+                // Установка громкости
+                this.shootSound.volume = 1.0;
+                this.explosionSound.volume = 1.0;
+
+                // Разблокировка звуков после первого взаимодействия
+                document.addEventListener('click', () => {
+                    this.shootSound.play().then(() => {
+                        this.shootSound.pause();
+                        this.shootSound.currentTime = 0;
+                    }).catch((e) => {
+                        console.error('Ошибка воспроизведения звука:', e);
+                    });
+                }, { once: true });
+
                 this.loadGame();
             }
 
@@ -218,6 +236,8 @@
                     });
                 }
                 this.explosions.push({ particles });
+                this.explosionSound.currentTime = 0; // Сбросить звук взрыва
+                this.explosionSound.play(); // Воспроизвести звук взрыва
             }
 
             showSubscribeButton() {
@@ -238,6 +258,8 @@
                         speed: 10 * (this.canvas.width / 500)
                     });
                     this.lastShootTime = currentTime;
+                    this.shootSound.currentTime = 0; // Сбросить звук стрельбы
+                    this.shootSound.play(); // Воспроизвести звук стрельбы
                 }
             }
 
