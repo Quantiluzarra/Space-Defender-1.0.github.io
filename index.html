@@ -99,20 +99,6 @@
             margin-bottom: 15px;
             font-size: 14px;
         }
-        #unlockSound {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            cursor: pointer;
-            z-index: 1000;
-            font-size: 18px;
-        }
     </style>
 </head>
 <body>
@@ -122,8 +108,6 @@
             <div id="pixelLoadingProgress"></div>
         </div>
     </div>
-
-    <button id="unlockSound">Нажмите, чтобы разблокировать звуки</button>
 
     <canvas id="gameCanvas"></canvas>
     
@@ -147,27 +131,7 @@
                 this.subscribeButton = document.getElementById('subscribeButton');
                 this.loadingScreen = document.getElementById('loadingScreen');
                 this.pixelLoadingProgress = document.getElementById('pixelLoadingProgress');
-                this.unlockSoundButton = document.getElementById('unlockSound');
                 
-                // Звуковые эффекты
-                this.shootSound = new Audio('https://www.soundjay.com/button/beep-07.mp3');
-                this.explosionSound = new Audio('https://www.soundjay.com/explosion-sound-effect.mp3');
-
-                // Установка громкости
-                this.shootSound.volume = 1.0;
-                this.explosionSound.volume = 1.0;
-
-                // Разблокировка звуков после нажатия кнопки
-                this.unlockSoundButton.addEventListener('click', () => {
-                    this.shootSound.play().then(() => {
-                        this.shootSound.pause();
-                        this.shootSound.currentTime = 0;
-                        this.unlockSoundButton.style.display = 'none';
-                    }).catch((e) => {
-                        console.error('Ошибка воспроизведения звука:', e);
-                    });
-                });
-
                 this.loadGame();
             }
 
@@ -254,8 +218,6 @@
                     });
                 }
                 this.explosions.push({ particles });
-                this.explosionSound.currentTime = 0; // Сбросить звук взрыва
-                this.explosionSound.play(); // Воспроизвести звук взрыва
             }
 
             showSubscribeButton() {
@@ -276,8 +238,6 @@
                         speed: 10 * (this.canvas.width / 500)
                     });
                     this.lastShootTime = currentTime;
-                    this.shootSound.currentTime = 0; // Сбросить звук стрельбы
-                    this.shootSound.play(); // Воспроизвести звук стрельбы
                 }
             }
 
