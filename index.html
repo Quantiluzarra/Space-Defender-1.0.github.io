@@ -132,6 +132,7 @@
                 this.loadingScreen = document.getElementById('loadingScreen');
                 this.pixelLoadingProgress = document.getElementById('pixelLoadingProgress');
                 
+                this.stars = [];
                 this.loadGame();
             }
 
@@ -148,6 +149,7 @@
                             this.setupCanvas();
                             this.initGame();
                             this.setupEventListeners();
+                            this.createStars();
                         }, 500);
                     }
                 }, 100);
@@ -173,6 +175,40 @@
                         this.canvas.width - this.player.width
                     ));
                 }, { passive: false });
+            }
+
+            createStars() {
+                for (let i = 0; i < 200; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        radius: Math.random() * 1.5,
+                        speed: Math.random() * 0.5 + 0.1,
+                        alpha: Math.random() * 0.5 + 0.5
+                    });
+                }
+            }
+
+            drawStars() {
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.fillStyle = '#fff';
+                this.stars.forEach(star => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    this.ctx.globalAlpha = star.alpha;
+                    this.ctx.fill();
+                });
+                this.ctx.globalAlpha = 1;
+
+                this.stars.forEach(star => {
+                    star.y += star.speed;
+                    if (star.y > this.canvas.height) {
+                        star.y = 0;
+                        star.x = Math.random() * this.canvas.width;
+                    }
+                });
             }
 
             restartGame() {
@@ -314,7 +350,7 @@
             }
 
             drawGameObjects() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawStars();
 
                 // Рисование игрока
                 this.ctx.fillStyle = 'blue';
